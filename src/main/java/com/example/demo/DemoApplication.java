@@ -16,39 +16,40 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class DemoApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
 
-	@GetMapping("test")
-	public String testEndpoint() {
-		return "Hello world";
-	}
+    @GetMapping("test")
+    public String testEndpoint() {
+        return "Hello world";
+    }
 
-	@Bean
-	public ObservationFilter customTagFilter() {
-		return context -> {
-			log.info("Executing observation filter");
+    @Bean
+    public ObservationFilter customTagFilter() {
+        return context -> {
+            log.info("Executing observation filter");
 
-			if (context instanceof ServerRequestObservationContext observationContext) {
-				KeyValues keyValues = KeyValues.empty();
+            if (context instanceof ServerRequestObservationContext observationContext) {
+                KeyValues keyValues = KeyValues.empty();
 
-				if (
-						observationContext.getCarrier() != null &
-						observationContext.getCarrier().getHeader("customerId") != null &
-						observationContext.getCarrier().getHeader("environmentId") != null
-				) {
-					var customerId = observationContext.getCarrier().getHeader("customerId");
-					var environmentId = observationContext.getCarrier().getHeader("environmentId");
+                // Optional tag which will be present in metrics only when the condition is evaluated to true
+                if (
+                        observationContext.getCarrier() != null &
+                                observationContext.getCarrier().getHeader("customerId") != null &
+                                observationContext.getCarrier().getHeader("environmentId") != null
+                ) {
+                    var customerId = observationContext.getCarrier().getHeader("customerId");
+                    var environmentId = observationContext.getCarrier().getHeader("environmentId");
 
-					keyValues = keyValues
-							.and(KeyValue.of("customerId", customerId))
-							.and(KeyValue.of("environmentId", environmentId));
-				}
+                    keyValues = keyValues
+                            .and(KeyValue.of("customerId", customerId))
+                            .and(KeyValue.of("environmentId", environmentId));
+                }
 
-				context.addLowCardinalityKeyValues(keyValues);
-			}
-			return context;
-		};
-	}
+                context.addLowCardinalityKeyValues(keyValues);
+            }
+            return context;
+        };
+    }
 }
