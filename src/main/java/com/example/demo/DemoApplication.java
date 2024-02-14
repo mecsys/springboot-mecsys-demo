@@ -34,6 +34,7 @@ public class DemoApplication {
                 KeyValues keyValues = KeyValues.empty();
 
                 // Optional tag which will be present in metrics only when the condition is evaluated to true
+                // Skip for Kubernetes probes
                 if (
                         observationContext.getCarrier() != null &
                                 observationContext.getCarrier().getHeader("customerId") != null &
