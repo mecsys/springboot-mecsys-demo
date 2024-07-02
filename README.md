@@ -7,6 +7,7 @@
 
 ## Config
 
+```
 package com.example.demo;
 
 import io.micrometer.common.KeyValue;
@@ -63,3 +64,4 @@ public class DemoApplication {
         };
     }
 }
+```
