@@ -3,11 +3,16 @@ package com.example.demo;
 import io.micrometer.common.KeyValue;
 import io.micrometer.common.KeyValues;
 import io.micrometer.observation.ObservationFilter;
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.Executors;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.server.observation.ServerRequestObservationContext;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -86,6 +91,14 @@ public class DemoApplication {
 
             return context;
         };
+    }
+
+    @Bean
+    TaskExecutor taskExecutor(ObservationRegistry registry) {
+        return new ObservationAwareExecutor(
+                Executors.newFixedThreadPool(10),
+                registry
+        );
     }
 
 }
