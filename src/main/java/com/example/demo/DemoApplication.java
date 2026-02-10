@@ -3,6 +3,7 @@ package com.example.demo;
 import io.micrometer.common.KeyValue;
 import io.micrometer.common.KeyValues;
 import io.micrometer.observation.ObservationFilter;
+import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,31 +27,63 @@ public class DemoApplication {
     }
 
     @Bean
-    public ObservationFilter customTagFilter() {
+    public ObservationFilter serverAndClientMetricsTags() {
         return context -> {
-            log.info("Executing observation filter");
 
-            if (context instanceof ServerRequestObservationContext observationContext) {
-                KeyValues keyValues = KeyValues.empty();
+            KeyValues keyValues = KeyValues.empty();
 
-                // Optional tag which will be present in metrics only when the condition is evaluated to true
-                // Skip for Kubernetes probes
-                if (
-                        observationContext.getCarrier() != null &
-                                observationContext.getCarrier().getHeader("customerId") != null &&
-                                observationContext.getCarrier().getHeader("environmentId") != null
-                ) {
-                    var customerId = observationContext.getCarrier().getHeader("customerId");
-                    var environmentId = observationContext.getCarrier().getHeader("environmentId");
+            // =========================
+            // HTTP SERVER
+            // =========================
+            if (context instanceof ServerRequestObservationContext serverCtx) {
 
-                    keyValues = keyValues
-                            .and(KeyValue.of("customerId", customerId))
-                            .and(KeyValue.of("environmentId", environmentId));
+                var carrier = serverCtx.getCarrier();
+                if (carrier != null) {
+
+                    String customerId = carrier.getHeader("customerId");
+                    String environmentId = carrier.getHeader("environmentId");
+
+                    if (StringUtils.isNotBlank(customerId)
+                            && StringUtils.isNotBlank(environmentId)) {
+
+                        keyValues = keyValues
+                                .and(KeyValue.of("customerId", customerId))
+                                .and(KeyValue.of("environmentId", environmentId));
+                    }
                 }
+            }
 
+            // =========================
+            // HTTP CLIENT
+            // =========================
+            if (context instanceof ClientRequestObservationContext) {
+
+                ServerRequestObservationContext serverCtx =
+                        ObservationThreadLocalAccessor.getCurrentServerContext();
+
+                if (serverCtx != null && serverCtx.getCarrier() != null) {
+
+                    String customerId =
+                            serverCtx.getCarrier().getHeader("customerId");
+                    String environmentId =
+                            serverCtx.getCarrier().getHeader("environmentId");
+
+                    if (StringUtils.isNotBlank(customerId)
+                            && StringUtils.isNotBlank(environmentId)) {
+
+                        keyValues = keyValues
+                                .and(KeyValue.of("customerId", customerId))
+                                .and(KeyValue.of("environmentId", environmentId));
+                    }
+                }
+            }
+
+            if (!keyValues.isEmpty()) {
                 context.addLowCardinalityKeyValues(keyValues);
             }
+
             return context;
         };
     }
+
 }
