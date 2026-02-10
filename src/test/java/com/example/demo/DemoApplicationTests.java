@@ -36,3 +36,51 @@ class TestController {
     }
 }
 
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
+@AutoConfigureObservability
+class ObservationMetricsTest {
+
+    @Autowired
+    MeterRegistry meterRegistry;
+
+    @Autowired
+    TestRestTemplate restTemplate;
+
+    @Test
+    void shouldAddSameLabelsToServerAndClientMetrics() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("customerId", "123");
+        headers.add("environmentId", "prod");
+
+        restTemplate.exchange(
+                "/test",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                String.class
+        );
+
+        // HTTP SERVER metric
+        Timer serverTimer = meterRegistry
+                .find("http.server.requests")
+                .tags(
+                        "customerId", "123",
+                        "environmentId", "prod"
+                )
+                .timer();
+
+        // HTTP CLIENT metric
+        Timer clientTimer = meterRegistry
+                .find("http.client.requests")
+                .tags(
+                        "customerId", "123",
+                        "environmentId", "prod"
+                )
+                .timer();
+
+        assertThat(serverTimer).isNotNull();
+        assertThat(clientTimer).isNotNull();
+    }
+}
