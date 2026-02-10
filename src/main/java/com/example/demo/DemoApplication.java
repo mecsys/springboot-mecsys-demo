@@ -60,6 +60,8 @@ public class DemoApplication {
 
                 ServerRequestObservationContext serverCtx =
                         ObservationThreadLocalAccessor.getCurrentServerContext();
+                log.info("Server context presente? {}",
+                    ObservationThreadLocalAccessor.getCurrentServerContext() != null);
 
                 if (serverCtx != null && serverCtx.getCarrier() != null) {
 
