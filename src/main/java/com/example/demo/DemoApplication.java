@@ -37,7 +37,7 @@ public class DemoApplication {
                 // Skip for Kubernetes probes
                 if (
                         observationContext.getCarrier() != null &
-                                observationContext.getCarrier().getHeader("customerId") != null &
+                                observationContext.getCarrier().getHeader("customerId") != null &&
                                 observationContext.getCarrier().getHeader("environmentId") != null
                 ) {
                     var customerId = observationContext.getCarrier().getHeader("customerId");
